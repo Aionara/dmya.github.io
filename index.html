@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐤点名鸭🐤 v2.1</title>
+    <!-- Classroom Voice Roll-Call v2.1 | MIT License | 仅供教学场景 -->
+    <link rel="stylesheet" href="style.css">       
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <canvas id="particles-canvas"></canvas>
+    
+    <!-- 顶部栏 -->
+    <header class="header">
+        <div class="logo" aria-label="🐤点名鸭🐤">
+            <svg class="icon" aria-hidden="true" style="margin-right:8px"><use href="#icon-mic"></use></svg>
+            <span>🐤点名鸭🐤 v2.1</span>
+        </div>
+        <div class="header-controls">
+            <div class="voice-toggle" onclick="toggleVoice()">
+                <svg id="voiceIcon" class="icon msr--green" aria-hidden="true"><use href="#icon-volume-on"></use></svg>
+                <span id="voiceText">语音开启</span>
+            </div>
+            <div class="theme-selector">
+                <button class="theme-btn theme-btn--macaron active" onclick="switchTheme('macaron')" title="马卡龙主题" style="background: linear-gradient(135deg, #ff6b6b, #ffd93d);">
+                    <svg class="icon" aria-hidden="true" style="color:#fff"><use href="#icon-palette"></use></svg>
+                </button>
+                <button class="theme-btn theme-btn--morandi" onclick="switchTheme('morandi')" title="莫兰迪主题" style="background: linear-gradient(135deg, #a8a8a8, #d4a574);">
+                    <svg class="icon" aria-hidden="true" style="color:#fff"><use href="#icon-leaf"></use></svg>
+                </button>
+                <button class="theme-btn theme-btn--geek" onclick="switchTheme('geek')" title="极客黑主题" style="background: linear-gradient(135deg, #1a1a1a, #333);">
+                    <svg class="icon" aria-hidden="true" style="color:#fff"><use href="#icon-code"></use></svg>
+                </button>
+                <button class="theme-btn theme-btn--high-contrast" onclick="switchTheme('high-contrast')" title="高对比主题" style="background: linear-gradient(135deg, #000, #fff);">
+                    <svg class="icon" aria-hidden="true" style="color:#fff"><use href="#icon-contrast"></use></svg>
+                </button>
+            </div>
+            <button class="btn btn-danger" onclick="resetAll()">重置数据</button>
+            <button class="btn btn-secondary" onclick="openTutorial()" title="查看使用教程">使用教程</button>
+        </div>
+    </header>
+
+    <!-- 左侧名单抽屉 -->
+    <div class="drawer" id="studentDrawer">
+        <div class="drawer-header">
+            <h3>学生名单</h3>
+            <button class="btn btn-secondary" onclick="closeDrawer()">×</button>
+        </div>
+        <div class="drawer-content">
+            <textarea class="student-input" id="studentInput" placeholder="每行一个学生姓名
+支持CSV格式
+拖拽文件到此处也可导入"></textarea>
+
+            <div class="drawer-actions">
+                <button class="btn btn-primary" onclick="saveStudents(); renderStudentButtons()">保存名单</button>
+                <button class="btn btn-secondary" onclick="clearStudents(); renderStudentButtons()">清空</button>
+                <button class="btn btn-secondary" onclick="exportStudents()">导出CSV</button>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <small>当前学生：<span id="studentCount">0</span>人</small>
+                <!-- 学生快捷呼叫按钮容器 -->
+                <div id="studentButtons" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧历史抽屉 -->
+    <div class="history" id="historyDrawer">
+        <div class="drawer-header">
+            <h3>点名历史</h3>
+            <button class="btn btn-secondary" onclick="closeHistory()">×</button>
+        </div>
+        <div class="drawer-content">
+        <div class="drawer-actions">
+            <button class="btn btn-primary" onclick="exportHistory()">导出CSV</button>
+                <button class="btn btn-secondary" onclick="clearHistory()">清空历史</button>
+            </div>
+            <div id="historyList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <!-- 主舞台 -->
+    <main class="main">
+        <div class="card" id="mainCard" onclick="handleStartPause()">
+                <div class="card__name" id="displayName">准备开始</div>
+                <div class="timer-display" id="timerDisplay" style="display: none;">00:00</div>
+            </div>
+            
+        <!-- 3D翻转卡片 -->
+        <div class="card card-3d" id="card3d" style="display: none;">
+                <div class="card-inner">
+                <div class="card-face"> </div>
+                <div class="card-face card-back" id="cardBack"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <!-- 模式切换 -->
+        <div class="control-row">
+            <div class="mode-tabs">
+                <button class="mode-tab active" data-mode="question" onclick="switchMode('question')"><strong>上课提问</strong></button>
+                <button class="mode-tab" data-mode="sequence" onclick="switchMode('sequence')"><strong>顺序点名</strong></button>
+                <button class="mode-tab" data-mode="random" onclick="switchMode('random')"><strong>随机点名</strong></button>
+                <button class="mode-tab" data-mode="quick" onclick="switchMode('quick')"><strong>快速连抽</strong></button>
+                <button class="mode-tab" data-mode="timer" onclick="switchMode('timer')"><strong>计时器</strong></button>
+            </div>
+        </div>
+        
+        <!-- 上课提问选项 -->
+        <div class="mode-options" id="questionOptions">
+            <div class="control-row">
+                <button class="btn btn-primary" onclick="askQuestion()">开始提问</button>
+                <label>
+                    <input type="checkbox" id="enableQuestionParticles" checked> 粒子效果
+                </label>
+            </div>
+            </div>
+
+        <!-- 顺序点名选项 -->
+        <div class="mode-options" id="sequenceOptions" style="display: none;">
+            <div class="control-row">
+                <button class="btn btn-primary" onclick="startSequence()">开始点名</button>
+                <button class="btn btn-secondary" onclick="pauseSequence()">暂停</button>
+                <button class="btn btn-secondary" onclick="nextStudent()">下一个</button>
+                <button class="btn btn-secondary" onclick="prevStudent()">上一个</button>
+            </div>
+            <div class="control-row">
+                <div class="slider-container">
+                    <label>间隔时间：<span id="intervalValue">1</span>秒</label>
+                    <input type="range" class="slider" id="intervalSlider" min="1" max="10" value="1">
+                </div>
+                </div>
+            </div>
+
+        <!-- 随机点名选项 -->
+        <div class="mode-options" id="randomOptions" style="display: none;">
+            <div class="control-row">
+                <button class="btn btn-primary" onclick="startRandom()">随机点名</button>
+            </div>
+            <div class="control-row">
+                <label>
+                    <input type="checkbox" id="enableParticles" checked> 粒子效果
+                </label>
+            </div>
+            </div>
+
+        <!-- 快速连抽选项 -->
+        <div class="mode-options" id="quickOptions" style="display: none;">
+            <div class="control-row">
+                <button class="btn btn-primary" onclick="startQuickDraw()">快速连抽</button>
+            </div>
+            <div class="control-row">
+                <div class="slider-container">
+                    <label>抽取人数：<span id="quickCountValue">3</span>人</label>
+                    <input type="range" class="slider" id="quickCountSlider" min="1" max="10" value="3">
+                </div>
+            </div>
+            </div>
+
+        <!-- 计时器选项 -->
+        <div class="mode-options" id="timerOptions" style="display: none;">
+            <div class="control-row">
+                <button class="btn btn-primary" onclick="startTimer()">开始计时</button>
+                <button class="btn btn-secondary" onclick="pauseTimer()">暂停</button>
+            </div>
+            <div class="control-row">
+                <select id="timerSelect">
+                        <option value="30">30秒</option>
+                        <option value="60">1分钟</option>
+                    <option value="300">5分钟</option>
+                    <option value="600">10分钟</option>
+                    <option value="1800">30分钟</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                <input type="number" id="customTimer" placeholder="秒" min="1" style="display: none;">
+            </div>
+        </div>
+
+        <!-- 语音设置 -->
+        <div class="control-row">
+            <div class="slider-container">
+                <label>语音速度：<span id="speechRateValue">1.0</span></label>
+                <input type="range" class="slider" id="speechRateSlider" min="0.5" max="2" step="0.1" value="1">
+        </div>
+    </div>
+
+        
+    </div>
+
+    <!-- 弹幕容器 -->
+    <div class="barrage" id="barrageContainer"></div>
+
+    <!-- 使用教程弹窗 -->
+    <div id="tutorialBackdrop" class="modal-backdrop" style="display:none;">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+            <div class="modal-header">
+                <h3 id="tutorialTitle">使用教程</h3>
+                <button class="modal-close" onclick="closeTutorial()" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-body">
+                <p>这是一个高颜值的语音点名工具，适用于课堂教学等场景。您可以按以下步骤快速开始：</p>
+                <ol>
+                    <li>点击左侧的“学生名单”按钮，打开名单抽屉，粘贴或输入学生姓名（每行一个）。</li>
+                    <li>点击“保存名单”，顶部主舞台会显示“准备开始”。</li>
+                    <li>在下方“模式”中选择需要的功能：<strong>上课提问</strong>、<strong>顺序点名</strong>、<strong>随机点名</strong>、<strong>快速连抽</strong>或<strong>计时器</strong>。</li>
+                    <li>上课提问/随机点名：点击“开始”或直接点击主舞台即可抽取，并自动语音播报。</li>
+                    <li>顺序点名：设置“间隔时间”，点击开始后会按顺序依次播报学生。</li>
+                    <li>快速连抽：通过滑块设置一次抽取人数，点击开始后会快速抽取多人并依次播报。</li>
+                    <li>计时器：选择预设时长或自定义秒数，开始后显示大号倒计时。</li>
+                    <li>右上角“语音开启”可切换是否播报；右侧“历史点名”可查看/导出记录；“重置数据”可清空所有数据。</li>
+                    <li>快捷键：空格 开始/暂停；N 下一个；R 随机；B 连抽；T 计时器。</li>
+                </ol>
+                <p>如需调整主题，可使用右上角的主题色圆形按钮进行切换。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 抽屉切换按钮 -->
+    <button class="drawer-toggle left" onclick="toggleDrawer()" aria-label="学生名单">
+        <div class="toggle-content">
+            <svg class="icon msr--blue" aria-hidden="true"><use href="#icon-users"></use></svg>
+            <span class="toggle-text">学生名单</span>
+                    </div>
+    </button>
+    <button class="drawer-toggle right" onclick="toggleHistory()" aria-label="历史点名">
+        <div class="toggle-content">
+            <svg class="icon msr--orange" aria-hidden="true"><use href="#icon-chart"></use></svg>
+            <span class="toggle-text">历史点名</span>
+        </div>
+    </button>
+
+    <!-- Inline SVG sprite -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
+        <symbol id="icon-mic" viewBox="0 0 24 24">
+            <rect x="9" y="2" width="6" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></rect>
+            <path d="M5 11a7 7 0 0 0 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+            <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+        </symbol>
+        <symbol id="icon-volume-on" viewBox="0 0 24 24">
+            <path d="M3 10v4h3l5 4V6l-5 4H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M16 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M18 7a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-volume-off" viewBox="0 0 24 24">
+            <path d="M3 10v4h3l5 4V6l-5 4H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <line x1="16" y1="9" x2="22" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+            <line x1="22" y1="9" x2="16" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+        </symbol>
+        <symbol id="icon-palette" viewBox="0 0 24 24">
+            <path d="M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a2 2 0 1 1 0-4h2a2 2 0 1 0 0-4h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle cx="7.5" cy="10.5" r="1.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+            <circle cx="8.5" cy="6.5" r="1.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+            <circle cx="15.5" cy="6.5" r="1.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+            <circle cx="17" cy="11.5" r="1.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+        </symbol>
+        <symbol id="icon-leaf" viewBox="0 0 24 24">
+            <path d="M20 3c-6 1-13 6-13 12 0 3 2 6 6 6 6 0 11-7 12-13-2 2-6 3-9 3-3 0-6 0-9 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-code" viewBox="0 0 24 24">
+            <path d="M8 9l-4 3 4 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M16 9l4 3-4 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M14 4l-4 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-contrast" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"></circle>
+            <path d="M12 3v18a9 9 0 0 0 0-18z" fill="none" stroke="currentColor" stroke-width="2"></path>
+        </symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24">
+            <circle cx="12" cy="10" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
+            <path d="M2 20a10 6 0 0 1 20 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-chart" viewBox="0 0 24 24">
+            <path d="M4 20V6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M10 20V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M16 20V4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M2 20h20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+    </svg>
+
+    <script src="script.js"></script>
+</body>
+</html>
