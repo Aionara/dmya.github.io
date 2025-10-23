@@ -20,7 +20,7 @@
 ## 🌐 在线演示
 
 👉 [点击访问演示站点](http://www.dmya.rf.gd/)
-
+![网站演示截图](https://image.ainosu.eu.org/file/AgACAgEAAyEGAASWh8NLAAOZaPodelBaEdYkjOEK_jw7qcJJDykAAg0LaxstpthHEjSTuPOTUm4BAAMCAAN3AAM2BA.png)
 > *建议使用桌面浏览器访问以获得最佳体验*
 
 ---
