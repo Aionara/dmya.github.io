@@ -1,0 +1,81 @@
+/* 滑动开关样式 */
+.switch-track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--text-light);
+    border-radius: 12px;
+    transition: background 0.3s ease;
+}
+
+/* 滑块 */
+.switch-thumb {
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* 标签文本 */
+.switch-label {
+    font-size: 14px;
+    font-weight: 500;
+    user-select: none;
+    white-space: nowrap;
+}
+
+/* 开关状态 */
+.controls-toggle[aria-expanded="true"] {
+    background: rgba(255,255,255,0.95);
+}
+
+.controls-toggle[aria-expanded="true"] .switch-track {
+    background: var(--primary);
+}
+
+.controls-toggle[aria-expanded="true"] .switch-thumb {
+    transform: translateX(20px);
+    background: #fff;
+}
+
+/* 悬停效果 */
+.controls-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+}
+
+.controls-toggle:active {
+    transform: translateY(0);
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+    .controls-toggle {
+        right: 12px;
+        bottom: 12px;
+        padding: 6px 12px;
+    }
+    
+    .switch-track {
+        width: 36px;
+        height: 20px;
+    }
+    
+    .switch-thumb {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .controls-toggle[aria-expanded="true"] .switch-thumb {
+        transform: translateX(16px);
+    }
+    
+    .switch-label {
+        font-size: 13px;
+    }
+}
